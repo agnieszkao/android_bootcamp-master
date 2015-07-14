@@ -1,26 +1,22 @@
 package com.droidonroids.weatherbootcamp;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import com.droidonroids.weatherbootcamp.adapters.ListAdapter;
 import com.droidonroids.weatherbootcamp.data.network.ApiService;
+import com.droidonroids.weatherbootcamp.data.network.entities.City;
 import com.droidonroids.weatherbootcamp.utils.Constants;
 import com.droidonroids.weatherbootcamp.data.network.entities.ForecastResponse;
-import com.droidonroids.weatherbootcamp.data.network.entities.Main;
-import com.droidonroids.weatherbootcamp.data.network.entities.Weather;
 import com.droidonroids.weatherbootcamp.data.network.entities.WeatherResponse;
 
 import java.util.ArrayList;
-import java.util.List;
 
 
 import retrofit.Callback;
@@ -32,41 +28,36 @@ import retrofit.client.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-	ListView listView;
-
-	private ImageView weatherIcon;
-	private ListAdapter adapter;
+	private ListView mListView;
+    private ListAdapter mAdapter;
 	private Button mSendWeatherRequestButton;
 	private EditText mCityNameEditText;
 	private ApiService mApiService;
-	private ArrayList<WeatherResponse> weatherResponses = new ArrayList<>();
+	private ArrayList<WeatherResponse> mWeatherResponses = new ArrayList<>();
+    private RequestInterceptor mRequestInterceptor;
+	private Callback<ForecastResponse> mCallback;
 
-	private Callback<ForecastResponse> callback;
-
-	@Override
+    @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		RequestInterceptor requestInterceptor = new RequestInterceptor() {
+		mRequestInterceptor = new RequestInterceptor() {
 			@Override
 			public void intercept(RequestFacade request) {
 				request.addQueryParam("units", "metric");
 			}
 		};
 
-		RestAdapter mRestAdapter = new RestAdapter.Builder()
-				.setLogLevel(RestAdapter.LogLevel.FULL)
-				.setLog(new AndroidLog(Constants.TAG))
-				.setRequestInterceptor(requestInterceptor)
-				.setEndpoint(Constants.ENDPOINT).build();
+        mApiService = getRestAdapter(Constants.ENDPOINT).create(ApiService.class);
 
-		mApiService = mRestAdapter.create(ApiService.class);
-
-		callback = new Callback<ForecastResponse>() {
+		mCallback = new Callback<ForecastResponse>() {
 			@Override
 			public void success(ForecastResponse forecastResponse, Response response) {
 				showForecastDetails(forecastResponse);
+                City city = forecastResponse.getCity();
+                String cityName = city.getName();
+                mCityNameEditText.setText("This is the forecast for " + cityName);
 			}
 
 			@Override
@@ -81,7 +72,12 @@ public class MainActivity extends AppCompatActivity {
 			@Override
 			public void onClick(View v) {
 				String cityName = mCityNameEditText.getText().toString();
-				mApiService.getWeatherWithCallback(cityName, callback);
+                if(cityName.length() > 0) {
+                    mApiService.getWeatherWithCallback(cityName, mCallback);
+                }
+                else {
+                    Toast.makeText(getApplicationContext(), "Enter a city name, please", Toast.LENGTH_SHORT).show();
+                }
 			}
 		});
 	}
@@ -90,17 +86,25 @@ public class MainActivity extends AppCompatActivity {
 	protected void onPostResume() {
 		super.onPostResume();
 
-		listView = (ListView)findViewById(R.id.list_view);
-		adapter = new ListAdapter(getApplicationContext(), weatherResponses);
-		listView.setAdapter(adapter);
+		mListView = (ListView)findViewById(R.id.list_view);
+		mAdapter = new ListAdapter(getApplicationContext(), mWeatherResponses);
+		mListView.setAdapter(mAdapter);
 	}
 
-	private void showForecastDetails(ForecastResponse forecastResponse) {
+    public RestAdapter getRestAdapter(String endpoint) {
+        return new RestAdapter.Builder()
+                .setLogLevel(RestAdapter.LogLevel.FULL)
+                .setLog(new AndroidLog(Constants.TAG))
+                .setRequestInterceptor(mRequestInterceptor)
+                .setEndpoint(endpoint).build();
+    }
+
+    private void showForecastDetails(ForecastResponse forecastResponse) {
 			ArrayList<WeatherResponse> weatherResponsesTemp = forecastResponse.getWeatherResponses();
-			this.weatherResponses.clear();
+			this.mWeatherResponses.clear();
 			for (WeatherResponse weatherResponse : weatherResponsesTemp) {
-				this.weatherResponses.add(weatherResponse);
+				this.mWeatherResponses.add(weatherResponse);
 			}
-			adapter.notifyDataSetChanged();
+			mAdapter.notifyDataSetChanged();
 		}
 }

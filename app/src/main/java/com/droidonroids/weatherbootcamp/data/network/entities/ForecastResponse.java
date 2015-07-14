@@ -6,19 +6,29 @@ import java.util.ArrayList;
 
 public class ForecastResponse {
 	@SerializedName("list")
-	private ArrayList<WeatherResponse> weatherResponses;
+	private ArrayList<WeatherResponse> mWeatherResponses;
+    @SerializedName("city")
+    private City mCity;
 
 	public ArrayList<WeatherResponse> getWeatherResponses() {
-		return this.weatherResponses;
+		return this.mWeatherResponses;
 	}
 
 	public void setWeatherResponses(ArrayList<WeatherResponse> weatherResponses) {
-		this.weatherResponses = weatherResponses;
+		this.mWeatherResponses = weatherResponses;
 	}
+
+    public City getCity() {
+        return mCity;
+    }
+
+    public void setCity(City city) {
+        this.mCity = city;
+    }
 
 	@Override public String toString() {
 		return "ForecastResponse{" +
-			"weatherResponses=" + weatherResponses +
+			"WeatherResponses=" + mWeatherResponses +
 			'}';
 	}
 }

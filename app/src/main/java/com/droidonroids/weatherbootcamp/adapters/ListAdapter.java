@@ -16,7 +16,6 @@ import com.droidonroids.weatherbootcamp.utils.UrlBuilder;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -71,6 +70,12 @@ public class ListAdapter extends ArrayAdapter<WeatherResponse> {
             Double temp = main.getTemp();
             holder.temperatureTxtView.setText(temp + "\u00b0" + "C");
         }
+
+        String time = weatherResponse.getTime();
+        if(time != null) {
+            holder.timeTxtView.setText(time.substring(0,16));
+        }
+
         return convertView;
     }
 
@@ -81,6 +86,8 @@ public class ListAdapter extends ArrayAdapter<WeatherResponse> {
         TextView descriptionTxtView;
         @Bind(R.id.temperature)
         TextView temperatureTxtView;
+        @Bind(R.id.time)
+        TextView timeTxtView;
 
         WeatherViewHolder(View view) {
             ButterKnife.bind(this, view);
